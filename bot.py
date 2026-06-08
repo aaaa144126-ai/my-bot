@@ -3258,123 +3258,146 @@ def main():
     app = Application.builder().token(TOKEN).build()
     jq  = app.job_queue
 
-    # --- الأوامر ---
-    cmds = [
-        ("start",          cmd_start),
-        ("الاوامر",        cmd_الاوامر),
-        # رتب
-        ("رتبتي",          cmd_رتبتي),
-        ("تعيين_رتبة",     cmd_تعيين_رتبة),
-        ("الرتب",          cmd_الرتب),
-        # حماية
-        ("حظر",            cmd_حظر),
-        ("رفع_حظر",        cmd_رفع_حظر),
-        ("كتم",            cmd_كتم),
-        ("رفع_كتم",        cmd_رفع_كتم),
-        ("طرد",            cmd_طرد),
-        ("انذار",          cmd_انذار),
-        ("الانذارات",      cmd_الانذارات),
-        ("مسح_انذارات",    cmd_مسح_انذارات),
-        ("ترقية",          cmd_ترقية),
-        ("تخفيض",          cmd_تخفيض),
-        ("تثبيت",          cmd_تثبيت),
-        ("حذف",            cmd_حذف),
-        ("اغلاق",          cmd_اغلاق),
-        ("رفع_اغلاق",      cmd_رفع_اغلاق),
-        # اعدادات
-        ("الاعدادات",      cmd_الاعدادات),
-        ("ترحيب",          cmd_ترحيب),
-        ("اضف_كلمة",       cmd_اضف_كلمة),
-        ("حذف_كلمة",       cmd_حذف_كلمة),
-        ("الكلمات",        cmd_الكلمات),
-        # معلومات
-        ("معلومات",        cmd_معلومات),
-        ("المجموعة",       cmd_المجموعة),
-        ("السجل",          cmd_السجل),
-        ("الاحصائيات",     cmd_الاحصائيات),
-        # اسلاميات
-        ("قران",           cmd_قران),
-        ("بحث_قران",       cmd_بحث_قران),
-        ("حديث",           cmd_حديث),
-        ("اذكار",          cmd_اذكار),
-        ("صباح",           cmd_صباح),
-        ("مساء",           cmd_مساء),
-        ("دعاء",           cmd_دعاء),
-        ("اسماء_الله",     cmd_اسماء_الله),
-        ("صلاة",           cmd_صلاة),
-        ("جدولة",          cmd_جدولة),
-        # خدمات
-        ("طقس",            cmd_طقس),
-        ("الوقت",          cmd_الوقت),
-        ("التاريخ",        cmd_التاريخ),
-        # همسة واختصارات
-        ("همسة",           cmd_همسة),
-        ("اختصار",         cmd_اختصار),
-        ("الاختصارات",     cmd_الاختصارات),
-        ("حذف_اختصار",     cmd_حذف_اختصار),
-        # تحميل
-        ("تحميل",           cmd_تحميل),
-        # أدوات
-        ("عملة",            cmd_عملة),
-        ("حاسبة",           cmd_حاسبة),
-        ("لخص",             cmd_لخص),
-        ("ترجم",            cmd_ترجم),
-        ("report",          cmd_report),
-        # خدمات خارجية
-        ("اخبار",           cmd_اخبار),
-        ("مباريات",         cmd_مباريات),
-        ("طقس_اسبوع",       cmd_طقس_اسبوع),
-        # تخصيص
-        ("تعيين_قواعد",     cmd_تعيين_قواعد),
-        ("القواعد",         cmd_القواعد),
-        ("اضف_امر",         cmd_اضف_امر),
-        ("الاوامر_المخصصة", cmd_الاوامر_المخصصة),
-        ("حذف_امر",         cmd_حذف_امر),
-        # أمان
-        ("اضف_رابط_مسموح",  cmd_اضف_رابط_مسموح),
-        ("الروابط_المسموحة", cmd_الروابط_المسموحة),
-        ("حذف_رابط_مسموح",  cmd_حذف_رابط_مسموح),
-        ("طوارئ",           cmd_طوارئ),
-        # ميديا
-        ("ستيكر",           cmd_ستيكر),
-        ("صوت",             cmd_صوت),
-        # تذكير
-        ("ذكرني",           cmd_ذكرني),
-        ("تذكيراتي",        cmd_تذكيراتي),
-        # يوت
-        ("متصدري_يوت",      cmd_متصدري_يوت),
-        # إعدادات شخصية
-        ("اعداداتي",        cmd_اعداداتي),
-        ("مدينتي",          cmd_مدينتي),
-        # broadcast
-        ("broadcast",       cmd_broadcast),
-        # قوائم
-        ("المكتومين",       cmd_المكتومين),
-        ("المحظورين",       cmd_المحظورين),
-        ("فك_كتم",          cmd_فك_كتم),
-        # حماية متقدمة
-        ("الحماية",         cmd_الحماية),
-        # تخصيص
-        ("تخصيص",           cmd_تخصيص),
-        ("تعيين_قواعد",     cmd_تعيين_قواعد),
-        ("القواعد",         cmd_القواعد),
-        # تنبيهات
-        ("تنبيهاتي",        cmd_تنبيهاتي),
-    ]
-    for name, handler in cmds:
-        app.add_handler(CommandHandler(name, handler))
+    # --- الأوامر الإنجليزية فقط (Telegram لا يقبل الأوامر العربية) ---
+    app.add_handler(CommandHandler("start",     cmd_start))
+    app.add_handler(CommandHandler("report",    cmd_report))
+    app.add_handler(CommandHandler("broadcast", cmd_broadcast))
 
-    # --- المعالجات ---
-    app.add_handler(MessageHandler(filters.ChatType.PRIVATE & filters.TEXT & ~filters.COMMAND, handle_private_message))
-    # معالج الروابط التلقائي (في المجموعات والخاص)
+    # --- معالج الأوامر العربية بدون / ---
+    # الكلمات العربية تُكتب مباشرة في المجموعة
+    ARABIC_COMMANDS = {
+        # قائمة
+        "الاوامر":          cmd_الاوامر,
+        # رتب
+        "رتبتي":            cmd_رتبتي,
+        "الرتب":            cmd_الرتب,
+        # حماية
+        "حظر":              cmd_حظر,
+        "رفع حظر":          cmd_رفع_حظر,
+        "كتم":              cmd_كتم,
+        "رفع كتم":          cmd_رفع_كتم,
+        "فك كتم":           cmd_فك_كتم,
+        "طرد":              cmd_طرد,
+        "انذار":            cmd_انذار,
+        "الانذارات":        cmd_الانذارات,
+        "مسح انذارات":      cmd_مسح_انذارات,
+        "ترقية":            cmd_ترقية,
+        "تخفيض":            cmd_تخفيض,
+        "تثبيت":            cmd_تثبيت,
+        "حذف":              cmd_حذف,
+        "اغلاق":            cmd_اغلاق,
+        "رفع اغلاق":        cmd_رفع_اغلاق,
+        # اعدادات
+        "الاعدادات":        cmd_الاعدادات,
+        "ترحيب":            cmd_ترحيب,
+        "الكلمات":          cmd_الكلمات,
+        # معلومات
+        "معلومات":          cmd_معلومات,
+        "المجموعة":         cmd_المجموعة,
+        "السجل":            cmd_السجل,
+        "الاحصائيات":       cmd_الاحصائيات,
+        # اسلاميات
+        "حديث":             cmd_حديث,
+        "اذكار":            cmd_اذكار,
+        "صباح":             cmd_صباح,
+        "مساء":             cmd_مساء,
+        "دعاء":             cmd_دعاء,
+        "اسماء الله":       cmd_اسماء_الله,
+        "جدولة":            cmd_جدولة,
+        # خدمات
+        "الوقت":            cmd_الوقت,
+        "التاريخ":          cmd_التاريخ,
+        # همسة
+        "همسة":             cmd_همسة,
+        "الاختصارات":       cmd_الاختصارات,
+        # ميديا
+        "ستيكر":            cmd_ستيكر,
+        # تذكير
+        "تذكيراتي":         cmd_تذكيراتي,
+        "متصدري يوت":       cmd_متصدري_يوت,
+        # إعدادات شخصية
+        "اعداداتي":         cmd_اعداداتي,
+        # قوائم
+        "المكتومين":        cmd_المكتومين,
+        "المحظورين":        cmd_المحظورين,
+        # حماية متقدمة
+        "الحماية":          cmd_الحماية,
+        # تخصيص
+        "تخصيص":            cmd_تخصيص,
+        "القواعد":          cmd_القواعد,
+        # تنبيهات
+        "تنبيهاتي":         cmd_تنبيهاتي,
+        "الاوامر المخصصة":  cmd_الاوامر_المخصصة,
+        "الروابط المسموحة": cmd_الروابط_المسموحة,
+    }
+
+    # الأوامر العربية التي تحتاج args (نص بعد الكلمة)
+    ARABIC_COMMANDS_WITH_ARGS = {
+        "تعيين رتبة":       cmd_تعيين_رتبة,
+        "اضف كلمة":         cmd_اضف_كلمة,
+        "حذف كلمة":         cmd_حذف_كلمة,
+        "قران":              cmd_قران,
+        "بحث قران":          cmd_بحث_قران,
+        "صلاة":              cmd_صلاة,
+        "طقس":               cmd_طقس,
+        "طقس اسبوع":         cmd_طقس_اسبوع,
+        "اختصار":            cmd_اختصار,
+        "حذف اختصار":        cmd_حذف_اختصار,
+        "تحميل":             cmd_تحميل,
+        "عملة":              cmd_عملة,
+        "حاسبة":             cmd_حاسبة,
+        "لخص":               cmd_لخص,
+        "ترجم":              cmd_ترجم,
+        "اخبار":             cmd_اخبار,
+        "مباريات":           cmd_مباريات,
+        "تعيين قواعد":       cmd_تعيين_قواعد,
+        "اضف امر":           cmd_اضف_امر,
+        "حذف امر":           cmd_حذف_امر,
+        "اضف رابط مسموح":    cmd_اضف_رابط_مسموح,
+        "حذف رابط مسموح":    cmd_حذف_رابط_مسموح,
+        "طوارئ":             cmd_طوارئ,
+        "صوت":               cmd_صوت,
+        "ذكرني":             cmd_ذكرني,
+        "مدينتي":            cmd_مدينتي,
+    }
+
+    async def handle_arabic_commands(update, context):
+        """معالج موحد للأوامر العربية بدون /"""
+        if not update.message or not update.message.text:
+            return
+        text = update.message.text.strip()
+
+        # تحقق من الأوامر بدون args
+        for cmd_text, handler in ARABIC_COMMANDS.items():
+            if text == cmd_text:
+                context.args = []
+                await handler(update, context)
+                return
+
+        # تحقق من الأوامر مع args
+        for cmd_text, handler in ARABIC_COMMANDS_WITH_ARGS.items():
+            if text == cmd_text or text.startswith(cmd_text + " "):
+                rest = text[len(cmd_text):].strip()
+                context.args = rest.split() if rest else []
+                await handler(update, context)
+                return
+
+    # تسجيل معالج الأوامر العربية (بأولوية عالية)
+    app.add_handler(MessageHandler(
+        filters.TEXT & ~filters.COMMAND,
+        handle_arabic_commands
+    ), group=0)
+
+    # --- المعالجات الأخرى (group=1 عشان تشتغل بعد الأوامر العربية) ---
+    app.add_handler(MessageHandler(filters.ChatType.PRIVATE & filters.TEXT & ~filters.COMMAND, handle_private_message), group=1)
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND & filters.Regex(r"https?://"),
         lambda u, c: handle_url_message(u, c)
-    ))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.ChatType.PRIVATE, check_message))
-    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, check_message))
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_member))
-    app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye_member))
+    ), group=1)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.ChatType.PRIVATE, check_message), group=1)
+    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, check_message), group=1)
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_member), group=1)
+    app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye_member), group=1)
     app.add_handler(CallbackQueryHandler(handle_buttons))
     app.add_error_handler(error_handler)
 
