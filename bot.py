@@ -1237,8 +1237,8 @@ async def delete_if_locked(update, context):
     settings = get_settings(chat_id)
     if not settings.get("chat_locked"): return False
     user = update.effective_user
+    text = update.message.text or ""
     if await is_admin(update, user.id):
-        # المشرف ممكن يقفل/يفتح بالكلام
         if text:
             await handle_chat_lock(update, context)
         return False
@@ -2690,6 +2690,7 @@ async def check_message(update, context):
     user    = update.effective_user
     chat    = update.effective_chat
     chat_id = str(chat.id)
+    text    = update.message.text or update.message.caption or ""
     if await is_admin(update, user.id):
         # المشرف ممكن يقفل/يفتح بالكلام
         if text:
@@ -2697,7 +2698,6 @@ async def check_message(update, context):
         return
 
     settings = get_settings(chat_id)
-    text     = update.message.text or update.message.caption or ""
 
     # فحص قفل الدردشة
     if await delete_if_locked(update, context):
@@ -3361,10 +3361,13 @@ def main():
         "مدينتي":            cmd_مدينتي,
     }
 
-    async def handle_arabic_commands(update, context):
-        """معالج موحد للأوامر العربية بدون /"""
+    async def handle_all_messages(update, context):
+        """معالج موحد — يشغل الأوامر العربية أو الحماية"""
         if not update.message or not update.message.text:
+            # رسائل بدون نص (صور/فيديو) تروح لـ check_message
+            await check_message(update, context)
             return
+
         text = update.message.text.strip()
 
         # تحقق من الأوامر بدون args
@@ -3382,22 +3385,21 @@ def main():
                 await handler(update, context)
                 return
 
-    # تسجيل معالج الأوامر العربية (بأولوية عالية)
-    app.add_handler(MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        handle_arabic_commands
-    ), group=0)
+        # مش أمر — شغّل الحماية والردود الطبيعية
+        if update.effective_chat.type == "private":
+            await handle_private_message(update, context)
+        else:
+            await check_message(update, context)
 
-    # --- المعالجات الأخرى (group=1 عشان تشتغل بعد الأوامر العربية) ---
-    app.add_handler(MessageHandler(filters.ChatType.PRIVATE & filters.TEXT & ~filters.COMMAND, handle_private_message), group=1)
+    # معالج موحد لكل الرسائل
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_all_messages))
+    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, check_message))
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND & filters.Regex(r"https?://"),
         lambda u, c: handle_url_message(u, c)
-    ), group=1)
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.ChatType.PRIVATE, check_message), group=1)
-    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, check_message), group=1)
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_member), group=1)
-    app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye_member), group=1)
+    ))
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_member))
+    app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye_member))
     app.add_handler(CallbackQueryHandler(handle_buttons))
     app.add_error_handler(error_handler)
 
